@@ -10,12 +10,6 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-// CockroachDB config for migrations
-type cockroachDBConfig struct {
-	migrationsTable string
-	lockingDisabled bool
-}
-
 func RunMigrations(direction string) {
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
