@@ -8,5 +8,5 @@ CREATE TABLE IF NOT EXISTS stock_events (
     brokerage TEXT NOT NULL,
     rating_from TEXT NOT NULL,
     rating_to TEXT NOT NULL,
-    time TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

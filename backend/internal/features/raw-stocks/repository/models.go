@@ -20,5 +20,5 @@ type StockEvent struct {
 	Brokerage  string
 	RatingFrom string
 	RatingTo   string
-	Time       time.Time
+	At         time.Time
 }

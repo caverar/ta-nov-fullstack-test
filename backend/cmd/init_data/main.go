@@ -8,7 +8,7 @@ import (
 func main() {
 
 	// Start the data initializer
-	initializer, err := raw_stocks.NewDataInitializer()
+	initializer, err := raw_stocks.NewRawStocksService()
 	if err != nil {
 		log.Fatal(err)
 	}

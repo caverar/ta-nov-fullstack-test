@@ -31,14 +31,14 @@ type APIResponse struct {
 
 // Service =========================================================================================
 
-type DataInitializer struct {
+type RawStocksService struct {
 	client *http.Client
 	token  string
 	host   string
 	db     *sql.DB
 }
 
-func NewDataInitializer() (*DataInitializer, error) {
+func NewRawStocksService() (*RawStocksService, error) {
 	// Read environment variables
 	err := godotenv.Load()
 	if err != nil {
@@ -60,7 +60,7 @@ func NewDataInitializer() (*DataInitializer, error) {
 	client := &http.Client{CheckRedirect: http.DefaultClient.CheckRedirect}
 
 	// Return the initializer
-	return &DataInitializer{
+	return &RawStocksService{
 		client: client,
 		token:  token,
 		host:   host,
@@ -68,7 +68,7 @@ func NewDataInitializer() (*DataInitializer, error) {
 	}, nil
 }
 
-func (di *DataInitializer) GetData(next string) (APIResponse, error) {
+func (di *RawStocksService) GetData(next string) (APIResponse, error) {
 	// Config the request
 	var host string
 	if next == "" {
