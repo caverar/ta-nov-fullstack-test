@@ -1,36 +1,37 @@
 package db
 
 import (
+	"database/sql"
 	"log"
 	"os"
 	"sync"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/jmoiron/sqlx"
 )
 
 var (
 	once     sync.Once
-	instance *sqlx.DB
+	instance *sql.DB
 )
 
-func Get() *sqlx.DB {
+func Get() *sql.DB {
 	once.Do(func() {
 		// Get the database connection string from .env
 		dsn := os.Getenv("DATABASE_URL")
 		if dsn == "" {
 			log.Fatal("DATABASE_URL not set")
 		}
-		log.Println("Connecting to database ...")
 
 		// Connect to the database
 		var err error
-		instance, err = sqlx.Connect("pgx", dsn)
+		instance, err = sql.Open("pgx", dsn)
 		if err != nil {
 			log.Fatalf("failed to connect to database: %v", err)
 		}
-
-		log.Println("✅ Database connection established")
+		// Check if the connection is alive
+		if err := instance.Ping(); err != nil {
+			log.Fatalf("ping error: %v", err)
+		}
 	})
 	return instance
 }

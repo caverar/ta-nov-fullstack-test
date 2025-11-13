@@ -1,7 +1,7 @@
 package main
 
 import (
-	"backend/db"
+	"backend/pkg/db"
 	"log"
 	"os"
 

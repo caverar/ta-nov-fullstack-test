@@ -16,15 +16,14 @@ func RunMigrations(direction string) {
 		log.Fatal("DATABASE_URL not set")
 	}
 
-	db := Get().DB
-	// CockroachDB compatible config - disable locking since pg_advisory_lock is not supported
+	db := Get()
 	driver, err := cockroachdb.WithInstance(db, &cockroachdb.Config{})
 	if err != nil {
 		log.Fatalf("failed to create migration driver: %v", err)
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://db/migrations",
+		"file://pkg/db/migrations",
 		"postgres",
 		driver,
 	)

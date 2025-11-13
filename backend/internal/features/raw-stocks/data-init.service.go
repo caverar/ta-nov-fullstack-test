@@ -1,14 +1,14 @@
-package main
+package raw_stocks
 
 import (
-	"backend/db"
+	"backend/pkg/db"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
 	"os"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
 )
 
@@ -29,16 +29,16 @@ type APIResponse struct {
 	NextPage string    `json:"next_page"`
 }
 
-// DATA INITIALIZER ================================================================================
+// Service =========================================================================================
 
 type DataInitializer struct {
 	client *http.Client
 	token  string
 	host   string
-	db     *sqlx.DB
+	db     *sql.DB
 }
 
-func newDataInitializer() (*DataInitializer, error) {
+func NewDataInitializer() (*DataInitializer, error) {
 	// Read environment variables
 	err := godotenv.Load()
 	if err != nil {
@@ -68,7 +68,7 @@ func newDataInitializer() (*DataInitializer, error) {
 	}, nil
 }
 
-func (di *DataInitializer) getData(next string) (APIResponse, error) {
+func (di *DataInitializer) GetData(next string) (APIResponse, error) {
 	// Config the request
 	var host string
 	if next == "" {
@@ -101,31 +101,4 @@ func (di *DataInitializer) getData(next string) (APIResponse, error) {
 		log.Fatal(err)
 	}
 	return result, nil
-}
-
-func main() {
-
-	// Start the data initializer
-	initializer, err := newDataInitializer()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var RawData []RawItem
-	var nextPage string
-	var counter int
-	for {
-		resp, err := initializer.getData(nextPage)
-		if err != nil {
-			log.Fatal(err)
-		}
-		RawData = append(RawData, resp.Items...)
-		nextPage = resp.NextPage
-		if nextPage == "" || len(resp.Items) == 0 {
-			break
-		}
-		log.Println("Chunk ", counter, "length: ", len(resp.Items), "next page: ", nextPage)
-		counter++
-	}
-	log.Println("Data initialized", RawData)
 }
