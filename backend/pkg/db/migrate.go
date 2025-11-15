@@ -16,7 +16,7 @@ func RunMigrations(direction string) {
 		log.Fatal("DATABASE_URL not set")
 	}
 
-	db := Get()
+	db := GetStd()
 	driver, err := cockroachdb.WithInstance(db, &cockroachdb.Config{})
 	if err != nil {
 		log.Fatalf("failed to create migration driver: %v", err)
