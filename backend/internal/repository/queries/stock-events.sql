@@ -1,4 +1,4 @@
--- name: AddStickEvents :exec
+-- name: AddStockEvents :exec
 INSERT INTO stock_events (
     ticker, target_from, target_to, company, action, brokerage, rating_from, rating_to, at
 ) VALUES (

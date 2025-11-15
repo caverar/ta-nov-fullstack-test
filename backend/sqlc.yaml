@@ -1,9 +1,9 @@
 version: "2"
 sql:
   - engine: "postgresql"
-    queries: "./internal/features/raw-stocks/repository/queries.sql"
-    schema: "./pkg/db/migrations/**.up.sql"
+    queries: "./internal/repository/queries"
+    schema: "./pkg/db/migrations"
     gen:
       go:
-        package: "raw_stocks_repository"
-        out: "./internal/features/raw-stocks/repository"
+        package: "repository"
+        out: "./internal/repository"
