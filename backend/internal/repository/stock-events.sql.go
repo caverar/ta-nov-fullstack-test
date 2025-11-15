@@ -10,14 +10,6 @@ import (
 	"time"
 )
 
-const addStockEvents = `-- name: AddStockEvents :exec
-INSERT INTO stock_events (
-    ticker, target_from, target_to, company, action, brokerage, rating_from, rating_to, at
-) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9
-)
-`
-
 type AddStockEventsParams struct {
 	Ticker     string
 	TargetFrom string
@@ -30,17 +22,11 @@ type AddStockEventsParams struct {
 	At         time.Time
 }
 
-func (q *Queries) AddStockEvents(ctx context.Context, arg AddStockEventsParams) error {
-	_, err := q.db.ExecContext(ctx, addStockEvents,
-		arg.Ticker,
-		arg.TargetFrom,
-		arg.TargetTo,
-		arg.Company,
-		arg.Action,
-		arg.Brokerage,
-		arg.RatingFrom,
-		arg.RatingTo,
-		arg.At,
-	)
+const deleteAllStockEvents = `-- name: DeleteAllStockEvents :exec
+TRUNCATE TABLE stock_events
+`
+
+func (q *Queries) DeleteAllStockEvents(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, deleteAllStockEvents)
 	return err
 }
