@@ -1,33 +1,33 @@
 package main
 
 import (
-	raw_stocks "backend/internal/features/raw-stocks"
+	stockLoader "backend/internal/features/stockloader"
+	"backend/internal/repository"
+	"backend/pkg/db"
 	"log"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
 
-	// Start the data initializer
-	initializer, err := raw_stocks.NewRawStocksService()
+	// Read environment variables
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	// DEPENDENCY INJECTION ========================================================================
+	db := db.Get()
+	repo := repository.New(db)
+	initializer, err := stockLoader.NewService(repo)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var RawData []raw_stocks.RawItem
-	var nextPage string
-	var counter int
-	for {
-		resp, err := initializer.GetData(nextPage)
-		if err != nil {
-			log.Fatal(err)
-		}
-		RawData = append(RawData, resp.Items...)
-		nextPage = resp.NextPage
-		if nextPage == "" || len(resp.Items) == 0 {
-			break
-		}
-		log.Println("Chunk ", counter, "length: ", len(resp.Items), "next page: ", nextPage)
-		counter++
+	// INITIALIZE THE DATA =========================================================================
+	err = initializer.InitData()
+	if err != nil {
+		log.Fatal("Error initializing stock data from API", err)
 	}
-	log.Println("Data initialized", RawData)
 }
