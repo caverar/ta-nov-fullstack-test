@@ -8,9 +8,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type StockEvent struct {
+type RawStockRating struct {
 	ID         uuid.UUID
 	Ticker     string
 	TargetFrom string
@@ -18,6 +19,18 @@ type StockEvent struct {
 	Company    string
 	Action     string
 	Brokerage  string
+	RatingFrom string
+	RatingTo   string
+	At         time.Time
+}
+
+type StockRating struct {
+	ID         uuid.UUID
+	Ticker     string
+	Company    string
+	TargetFrom pgtype.Numeric
+	TargetTo   pgtype.Numeric
+	Action     string
 	RatingFrom string
 	RatingTo   string
 	At         time.Time

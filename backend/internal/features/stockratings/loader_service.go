@@ -1,4 +1,4 @@
-package stockloader
+package stockratings
 
 import (
 	"context"
@@ -33,7 +33,7 @@ type APIResponse struct {
 
 // TODO Make good error handling using this:
 var (
-	ErrMissingCredentials = errors.New("missing host/token for stockloader")
+	ErrMissingCredentials = errors.New("missing host/token for stockRatingsLoaders")
 	ErrAPIRequest         = errors.New("failed to request external API")
 	ErrBadStatus          = errors.New("unexpected status from API")
 	ErrDecode             = errors.New("failed to decode response")
@@ -42,14 +42,14 @@ var (
 
 // SERVICE =========================================================================================
 
-type Service struct {
+type LoaderService struct {
 	client *http.Client
 	token  string
 	host   string
 	repo   *repository.Queries
 }
 
-func NewService(r *repository.Queries) (*Service, error) {
+func NewLoaderService(r *repository.Queries) (*LoaderService, error) {
 	// Get the host and token
 	host := os.Getenv("DATA_HOST")
 	token := os.Getenv("DATA_TOKEN")
@@ -62,7 +62,7 @@ func NewService(r *repository.Queries) (*Service, error) {
 	client := &http.Client{CheckRedirect: http.DefaultClient.CheckRedirect}
 
 	// Return the initializer
-	return &Service{
+	return &LoaderService{
 		client: client,
 		token:  token,
 		host:   host,
@@ -71,7 +71,7 @@ func NewService(r *repository.Queries) (*Service, error) {
 }
 
 // Get the data from the API
-func (s *Service) getData(cursor string) (APIResponse, error) {
+func (s *LoaderService) getData(cursor string) (APIResponse, error) {
 	// Config the request
 	var host string
 	if cursor == "" {
@@ -106,15 +106,15 @@ func (s *Service) getData(cursor string) (APIResponse, error) {
 	return result, nil
 }
 
-func (s *Service) clearEvents() error {
-	err := s.repo.DeleteAllStockEvents(context.Background())
+func (s *LoaderService) clearEvents() error {
+	err := s.repo.DeleteRawStockRatings(context.Background())
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *Service) InitData() error {
+func (s *LoaderService) InitData() error {
 
 	// Clear the current data
 	err := s.clearEvents()
@@ -136,13 +136,13 @@ func (s *Service) InitData() error {
 		// If not void insert it into the database
 		if len(resp.Items) > 0 {
 
-			var stocksEvents []repository.AddStockEventsParams
+			var stocksEvents []repository.AddRawStockRatingsParams
 			for _, stockEvent := range resp.Items {
 				at, err := time.Parse(time.RFC3339Nano, stockEvent.Time)
 				if err != nil {
 					log.Fatal(err)
 				}
-				stocksEvents = append(stocksEvents, repository.AddStockEventsParams{
+				stocksEvents = append(stocksEvents, repository.AddRawStockRatingsParams{
 					Ticker:     stockEvent.Ticker,
 					TargetFrom: stockEvent.TargetFrom,
 					TargetTo:   stockEvent.TargetTo,
@@ -155,7 +155,7 @@ func (s *Service) InitData() error {
 				})
 			}
 
-			_, err = s.repo.AddStockEvents(context.Background(), stocksEvents)
+			_, err = s.repo.AddRawStockRatings(context.Background(), stocksEvents)
 			if err != nil {
 				log.Fatal(err)
 			}

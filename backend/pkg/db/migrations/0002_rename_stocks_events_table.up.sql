@@ -1,0 +1,1 @@
+ALTER TABLE stock_events RENAME TO raw_stock_ratings;

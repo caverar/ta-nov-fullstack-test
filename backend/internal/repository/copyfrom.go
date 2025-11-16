@@ -9,13 +9,13 @@ import (
 	"context"
 )
 
-// iteratorForAddStockEvents implements pgx.CopyFromSource.
-type iteratorForAddStockEvents struct {
-	rows                 []AddStockEventsParams
+// iteratorForAddRawStockRatings implements pgx.CopyFromSource.
+type iteratorForAddRawStockRatings struct {
+	rows                 []AddRawStockRatingsParams
 	skippedFirstNextCall bool
 }
 
-func (r *iteratorForAddStockEvents) Next() bool {
+func (r *iteratorForAddRawStockRatings) Next() bool {
 	if len(r.rows) == 0 {
 		return false
 	}
@@ -27,7 +27,7 @@ func (r *iteratorForAddStockEvents) Next() bool {
 	return len(r.rows) > 0
 }
 
-func (r iteratorForAddStockEvents) Values() ([]interface{}, error) {
+func (r iteratorForAddRawStockRatings) Values() ([]interface{}, error) {
 	return []interface{}{
 		r.rows[0].Ticker,
 		r.rows[0].TargetFrom,
@@ -41,10 +41,10 @@ func (r iteratorForAddStockEvents) Values() ([]interface{}, error) {
 	}, nil
 }
 
-func (r iteratorForAddStockEvents) Err() error {
+func (r iteratorForAddRawStockRatings) Err() error {
 	return nil
 }
 
-func (q *Queries) AddStockEvents(ctx context.Context, arg []AddStockEventsParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"stock_events"}, []string{"ticker", "target_from", "target_to", "company", "action", "brokerage", "rating_from", "rating_to", "at"}, &iteratorForAddStockEvents{rows: arg})
+func (q *Queries) AddRawStockRatings(ctx context.Context, arg []AddRawStockRatingsParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"raw_stock_ratings"}, []string{"ticker", "target_from", "target_to", "company", "action", "brokerage", "rating_from", "rating_to", "at"}, &iteratorForAddRawStockRatings{rows: arg})
 }

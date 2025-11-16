@@ -1,7 +1,7 @@
 package main
 
 import (
-	stockLoader "backend/internal/features/stockloader"
+	stockRatings "backend/internal/features/stockratings"
 	"backend/internal/repository"
 	"backend/pkg/db"
 	"log"
@@ -20,7 +20,7 @@ func main() {
 	// DEPENDENCY INJECTION ========================================================================
 	db := db.Get()
 	repo := repository.New(db)
-	initializer, err := stockLoader.NewService(repo)
+	initializer, err := stockRatings.NewLoaderService(repo)
 	if err != nil {
 		log.Fatal(err)
 	}
