@@ -5,11 +5,100 @@
 package repository
 
 import (
+	"database/sql/driver"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type StockActionType string
+
+const (
+	StockActionTypeUp         StockActionType = "up"
+	StockActionTypeDown       StockActionType = "down"
+	StockActionTypeReiterated StockActionType = "reiterated"
+)
+
+func (e *StockActionType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = StockActionType(s)
+	case string:
+		*e = StockActionType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for StockActionType: %T", src)
+	}
+	return nil
+}
+
+type NullStockActionType struct {
+	StockActionType StockActionType
+	Valid           bool // Valid is true if StockActionType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullStockActionType) Scan(value interface{}) error {
+	if value == nil {
+		ns.StockActionType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.StockActionType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullStockActionType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.StockActionType), nil
+}
+
+type StockRatingType string
+
+const (
+	StockRatingTypeBuy     StockRatingType = "buy"
+	StockRatingTypeHold    StockRatingType = "hold"
+	StockRatingTypeSell    StockRatingType = "sell"
+	StockRatingTypePending StockRatingType = "pending"
+)
+
+func (e *StockRatingType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = StockRatingType(s)
+	case string:
+		*e = StockRatingType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for StockRatingType: %T", src)
+	}
+	return nil
+}
+
+type NullStockRatingType struct {
+	StockRatingType StockRatingType
+	Valid           bool // Valid is true if StockRatingType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullStockRatingType) Scan(value interface{}) error {
+	if value == nil {
+		ns.StockRatingType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.StockRatingType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullStockRatingType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.StockRatingType), nil
+}
 
 type RawStockRating struct {
 	ID         uuid.UUID
@@ -30,8 +119,8 @@ type StockRating struct {
 	Company    string
 	TargetFrom pgtype.Numeric
 	TargetTo   pgtype.Numeric
-	Action     string
-	RatingFrom string
-	RatingTo   string
+	Action     StockActionType
+	RatingFrom StockRatingType
+	RatingTo   StockRatingType
 	At         time.Time
 }

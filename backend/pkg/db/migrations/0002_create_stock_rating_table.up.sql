@@ -1,5 +1,5 @@
-CREATE TYPE IF NOT EXISTS STOCK_RATING_TYPE AS ENUM ( 'buy', 'hold', 'sell');
-CREATE TYPE IF NOT EXISTS STOCK_ACTION_TYPE AS ENUM ( 'up', 'down', 'reiterated');
+CREATE TYPE STOCK_RATING_TYPE AS ENUM ( 'buy', 'hold', 'sell', 'pending');
+CREATE TYPE STOCK_ACTION_TYPE AS ENUM ( 'up', 'down', 'reiterated');
 CREATE TABLE IF NOT EXISTS stock_rating (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     ticker TEXT NOT NULL,
