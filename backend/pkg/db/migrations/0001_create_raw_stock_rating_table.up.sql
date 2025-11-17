@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS stock_events (
+CREATE TABLE IF NOT EXISTS raw_stock_rating (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     ticker TEXT NOT NULL,
     target_from TEXT NOT NULL,
