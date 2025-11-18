@@ -36,48 +36,30 @@ func (q *Queries) ClearStockRating(ctx context.Context) error {
 	return err
 }
 
-const getDetailStockRatingList = `-- name: GetDetailStockRatingList :many
-SELECT ticker, company, target_from, target_to, action, rating_from, rating_to, at
+const getOverallAnalystActions = `-- name: GetOverallAnalystActions :many
+SELECT
+    action AS action,
+    COUNT(*) AS count
 FROM stock_rating
-LIMIT $1
-OFFSET $2
+GROUP BY action
+ORDER BY count DESC
 `
 
-type GetDetailStockRatingListParams struct {
-	Limit  int32
-	Offset int32
+type GetOverallAnalystActionsRow struct {
+	Action StockActionType
+	Count  int64
 }
 
-type GetDetailStockRatingListRow struct {
-	Ticker     string
-	Company    string
-	TargetFrom pgtype.Numeric
-	TargetTo   pgtype.Numeric
-	Action     StockActionType
-	RatingFrom StockRatingType
-	RatingTo   StockRatingType
-	At         time.Time
-}
-
-func (q *Queries) GetDetailStockRatingList(ctx context.Context, arg GetDetailStockRatingListParams) ([]GetDetailStockRatingListRow, error) {
-	rows, err := q.db.Query(ctx, getDetailStockRatingList, arg.Limit, arg.Offset)
+func (q *Queries) GetOverallAnalystActions(ctx context.Context) ([]GetOverallAnalystActionsRow, error) {
+	rows, err := q.db.Query(ctx, getOverallAnalystActions)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetDetailStockRatingListRow
+	var items []GetOverallAnalystActionsRow
 	for rows.Next() {
-		var i GetDetailStockRatingListRow
-		if err := rows.Scan(
-			&i.Ticker,
-			&i.Company,
-			&i.TargetFrom,
-			&i.TargetTo,
-			&i.Action,
-			&i.RatingFrom,
-			&i.RatingTo,
-			&i.At,
-		); err != nil {
+		var i GetOverallAnalystActionsRow
+		if err := rows.Scan(&i.Action, &i.Count); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -88,27 +70,191 @@ func (q *Queries) GetDetailStockRatingList(ctx context.Context, arg GetDetailSto
 	return items, nil
 }
 
-const getStockRatingList = `-- name: GetStockRatingList :many
-SELECT ticker, company
+const getOverallMarketStockRatings = `-- name: GetOverallMarketStockRatings :many
+
+SELECT
+    rating_to AS rating,
+    COUNT(*) AS count
 FROM stock_rating
-ORDER BY ticker ASC
+GROUP BY action
+ORDER BY count DESC
 `
 
-type GetStockRatingListRow struct {
-	Ticker  string
-	Company string
+type GetOverallMarketStockRatingsRow struct {
+	Rating StockRatingType
+	Count  int64
 }
 
-func (q *Queries) GetStockRatingList(ctx context.Context) ([]GetStockRatingListRow, error) {
-	rows, err := q.db.Query(ctx, getStockRatingList)
+// Recommendations Dashboard
+func (q *Queries) GetOverallMarketStockRatings(ctx context.Context) ([]GetOverallMarketStockRatingsRow, error) {
+	rows, err := q.db.Query(ctx, getOverallMarketStockRatings)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetStockRatingListRow
+	var items []GetOverallMarketStockRatingsRow
 	for rows.Next() {
-		var i GetStockRatingListRow
-		if err := rows.Scan(&i.Ticker, &i.Company); err != nil {
+		var i GetOverallMarketStockRatingsRow
+		if err := rows.Scan(&i.Rating, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getStockRatings = `-- name: GetStockRatings :many
+WITH scored_stock_ratings AS (
+    SELECT
+        ticker,
+        company,
+        brokerage,
+        target_from,
+        target_to,
+        action,
+        raw_action,
+        rating_from,
+        rating_to,
+        at,
+        (target_to - target_from)::Numeric(10,2) AS target_delta,
+        (TRUNC((10 * COALESCE( (target_to - target_from) / target_from, 0))
+        + (2 * (CASE rating_to
+            WHEN 'buy' THEN 1
+            WHEN 'hold' THEN 0
+            WHEN 'pending' THEN 0
+            WHEN 'sell' THEN -1
+        END))
+        + (1 * (CASE action
+            WHEN 'up' THEN 1
+            WHEN 'down' THEN -1
+            WHEN 'reiterated' THEN 0
+        END)), 3)*1000)::DECIMAL "score"
+    FROM stock_rating
+    WHERE
+        ($5::text IS NULL OR ticker ILIKE '%' || $5::text || '%')
+        AND ($6::text IS NULL OR company ILIKE '%' || $6::text || '%')
+)
+SELECT
+    ticker,
+    company,
+    brokerage,
+    target_from::text,
+    target_to::text,
+    action,
+    raw_action,
+    rating_from,
+    rating_to,
+    at,
+    target_delta::text,
+    score::INTEGER
+FROM scored_stock_ratings
+ORDER BY
+    -- Numeric ordering
+    CASE WHEN $1::text = 'desc' THEN
+        CASE $2::text
+            WHEN 'target_from' THEN target_from
+            WHEN 'target_to' THEN target_to
+            WHEN 'target_delta' THEN target_delta
+            WHEN 'score' THEN score
+            ELSE NULl
+        END
+    END DESC,
+    CASE WHEN $1::text = 'asc' THEN
+        CASE $2::text
+            WHEN 'target_from' THEN target_from
+            WHEN 'target_to' THEN target_to
+            WHEN 'target_delta' THEN target_delta
+            WHEN 'score' THEN score
+            ELSE NULl
+        END
+    END ASC,
+    -- String Ordering
+    CASE WHEN $1::text = 'desc' THEN
+        CASE $2::text
+            WHEN 'ticker' THEN ticker::text
+            WHEN 'company' THEN company::text
+            WHEN 'brokerage' THEN brokerage::text
+            WHEN 'action' THEN action::text
+            WHEN 'rating_from' THEN rating_from::text
+            WHEN 'rating_to' THEN rating_to::text
+            ELSE NULl
+        END
+    END DESC,
+    CASE WHEN $1::text = 'asc' THEN
+        CASE $2::text
+            WHEN 'ticker' THEN ticker::text
+            WHEN 'company' THEN company::text
+            WHEN 'brokerage' THEN brokerage::text
+            WHEN 'action' THEN action::text
+            WHEN 'rating_from' THEN rating_from::text
+            WHEN 'rating_to' THEN rating_to::text
+            ELSE NULl
+        END
+    END,
+    ticker ASC
+
+LIMIT $4
+OFFSET $3
+`
+
+type GetStockRatingsParams struct {
+	SortOrder   string
+	SortBy      string
+	Offset      int32
+	Limit       int32
+	TickerLike  string
+	CompanyLike string
+}
+
+type GetStockRatingsRow struct {
+	Ticker      string
+	Company     string
+	Brokerage   string
+	TargetFrom  string
+	TargetTo    string
+	Action      StockActionType
+	RawAction   string
+	RatingFrom  StockRatingType
+	RatingTo    StockRatingType
+	At          time.Time
+	TargetDelta string
+	Score       int32
+}
+
+// List
+func (q *Queries) GetStockRatings(ctx context.Context, arg GetStockRatingsParams) ([]GetStockRatingsRow, error) {
+	rows, err := q.db.Query(ctx, getStockRatings,
+		arg.SortOrder,
+		arg.SortBy,
+		arg.Offset,
+		arg.Limit,
+		arg.TickerLike,
+		arg.CompanyLike,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetStockRatingsRow
+	for rows.Next() {
+		var i GetStockRatingsRow
+		if err := rows.Scan(
+			&i.Ticker,
+			&i.Company,
+			&i.Brokerage,
+			&i.TargetFrom,
+			&i.TargetTo,
+			&i.Action,
+			&i.RawAction,
+			&i.RatingFrom,
+			&i.RatingTo,
+			&i.At,
+			&i.TargetDelta,
+			&i.Score,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

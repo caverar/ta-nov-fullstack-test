@@ -12,3 +12,5 @@ db-generate:
 	sqlc generate
 init-data:
 	go run ./cmd/init_data
+app:
+	go run ./cmd/app
