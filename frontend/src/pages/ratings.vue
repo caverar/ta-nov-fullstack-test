@@ -5,6 +5,7 @@ import type { TableColumn } from '@nuxt/ui'
 import { useFetch } from '@vueuse/core'
 import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import type { User } from '../types'
+import { useCounterStore } from '../stores/ratings'
 
 const UAvatar = resolveComponent('UAvatar')
 const UButton = resolveComponent('UButton')
@@ -12,7 +13,7 @@ const UBadge = resolveComponent('UBadge')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 const UCheckbox = resolveComponent('UCheckbox')
 
-const toast = useToast()
+// const toast = useToast()
 const table = useTemplateRef('table')
 
 const columnFilters = ref([{
@@ -22,52 +23,55 @@ const columnFilters = ref([{
 const columnVisibility = ref()
 const rowSelection = ref({ 1: true })
 
+const tableState = useCounterStore()
+
+
 const { data, isFetching } = useFetch('https://dashboard-template.nuxt.dev/api/customers', { initialData: [] }).json<User[]>()
 
-function getRowItems(row: Row<User>) {
-  return [
-    {
-      type: 'label',
-      label: 'Actions'
-    },
-    {
-      label: 'Copy customer ID',
-      icon: 'i-lucide-copy',
-      onSelect() {
-        navigator.clipboard.writeText(row.original.id.toString())
-        toast.add({
-          title: 'Copied to clipboard',
-          description: 'Customer ID copied to clipboard'
-        })
-      }
-    },
-    {
-      type: 'separator'
-    },
-    {
-      label: 'View customer details',
-      icon: 'i-lucide-list'
-    },
-    {
-      label: 'View customer payments',
-      icon: 'i-lucide-wallet'
-    },
-    {
-      type: 'separator'
-    },
-    {
-      label: 'Delete customer',
-      icon: 'i-lucide-trash',
-      color: 'error',
-      onSelect() {
-        toast.add({
-          title: 'Customer deleted',
-          description: 'The customer has been deleted.'
-        })
-      }
-    }
-  ]
-}
+// function getRowItems(row: Row<User>) {
+//   return [
+//     {
+//       type: 'label',
+//       label: 'Actions'
+//     },
+//     {
+//       label: 'Copy customer ID',
+//       icon: 'i-lucide-copy',
+//       onSelect() {
+//         navigator.clipboard.writeText(row.original.id.toString())
+//         toast.add({
+//           title: 'Copied to clipboard',
+//           description: 'Customer ID copied to clipboard'
+//         })
+//       }
+//     },
+//     {
+//       type: 'separator'
+//     },
+//     {
+//       label: 'View customer details',
+//       icon: 'i-lucide-list'
+//     },
+//     {
+//       label: 'View customer payments',
+//       icon: 'i-lucide-wallet'
+//     },
+//     {
+//       type: 'separator'
+//     },
+//     {
+//       label: 'Delete customer',
+//       icon: 'i-lucide-trash',
+//       color: 'error',
+//       onSelect() {
+//         toast.add({
+//           title: 'Customer deleted',
+//           description: 'The customer has been deleted.'
+//         })
+//       }
+//     }
+//   ]
+// }
 
 const columns: TableColumn<User>[] = [
   {
@@ -182,6 +186,9 @@ const pagination = ref({
   pageIndex: 0,
   pageSize: 10
 })
+
+
+
 </script>
 
 <template>
@@ -253,7 +260,7 @@ const pagination = ref({
       <UTable
         ref="table"
         v-model:column-filters="columnFilters"
-        v-model:column-visibility="columnVisibility"
+        v-model:column-visibility="tableState.visibleColumns"
         v-model:row-selection="rowSelection"
         v-model:pagination="pagination"
         :pagination-options="{

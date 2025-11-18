@@ -11,5 +11,6 @@ export type RatingsSortBy =
   'rating_to' | undefined
 export type RatingsSortOrder = 'asc' | 'desc'
 export type RatingSearchBy = 'company' | 'ticker'
+export type RatingColumns = 'email' | string
 
 

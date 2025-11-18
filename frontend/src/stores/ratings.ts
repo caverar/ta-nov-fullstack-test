@@ -13,11 +13,13 @@ export const useCounterStore = defineStore('counter', () => {
   const searchBy = ref<RatingSearchBy>('company')
   const sortBy = ref<RatingsSortBy>(undefined)
   const sortOrder = ref<RatingsSortOrder>('desc')
+  const visibleColumns = ref<RatingColumns[]>('email')
 
   return {
     searchString,
     searchBy,
     sortBy,
-    sortOrder
+    sortOrder,
+    visibleColumns
   }
 })
