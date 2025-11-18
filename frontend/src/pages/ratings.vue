@@ -149,28 +149,16 @@ const columns: TableColumn<User>[] = [
     }
   },
   {
-    id: 'actions',
+    id: 'details',
     cell: ({ row }) => {
-      return h(
-        'div',
-        { class: 'text-right' },
-        h(
-          UDropdownMenu,
-          {
-            content: {
-              align: 'end'
-            },
-            items: getRowItems(row)
-          },
-          () =>
-            h(UButton, {
-              icon: 'i-lucide-ellipsis-vertical',
-              color: 'neutral',
-              variant: 'ghost',
-              class: 'ml-auto'
-            })
-        )
-      )
+      // const id = row.original.id
+      return h(UButton, {
+        icon: 'arcticons:stockswidget',
+        color: 'info',
+        variant: 'soft',
+        class: 'ml-auto',
+        to: "/"
+      })
     }
   }
 ]
@@ -204,9 +192,9 @@ const pagination = ref({
           <UDashboardSidebarCollapse />
         </template>
 
-        <template #right>
+        <!-- <template #right>
           <CustomersAddModal />
-        </template>
+        </template> -->
       </UDashboardNavbar>
     </template>
 
@@ -221,22 +209,6 @@ const pagination = ref({
         />
 
         <div class="flex flex-wrap items-center gap-1.5">
-          <CustomersDeleteModal :count="table?.tableApi?.getFilteredSelectedRowModel().rows.length">
-            <UButton
-              v-if="table?.tableApi?.getFilteredSelectedRowModel().rows.length"
-              label="Delete"
-              color="error"
-              variant="subtle"
-              icon="i-lucide-trash"
-            >
-              <template #trailing>
-                <UKbd>
-                  {{ table?.tableApi?.getFilteredSelectedRowModel().rows.length }}
-                </UKbd>
-              </template>
-            </UButton>
-          </CustomersDeleteModal>
-
           <USelect
             v-model="statusFilter"
             :items="[
