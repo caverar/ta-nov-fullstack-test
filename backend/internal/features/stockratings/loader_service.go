@@ -64,14 +64,6 @@ func NewLoaderService(r *repository.Queries) *LoaderService {
 }
 
 // utils ===========================================================================================
-func (s *LoaderService) clearRawStockRatings() error {
-	err := s.repo.ClearRawStockRating(context.Background())
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *LoaderService) clearStockRatings() error {
 	err := s.repo.ClearStockRating(context.Background())
 	if err != nil {
@@ -217,7 +209,6 @@ type initDataErrorKind int
 
 const (
 	_ initDataErrorKind = iota
-	clearRawStockRatingsError
 	clearStockRatingsError
 	dataFetchError
 	timeParseError
@@ -235,8 +226,6 @@ type InitDataError struct {
 
 func (e InitDataError) Error() string {
 	switch e.kind {
-	case clearRawStockRatingsError:
-		return fmt.Sprintf("Failed to clear current raw data: %s", e.err.Error())
 	case clearStockRatingsError:
 		return fmt.Sprintf("Failed to clear current data: %s", e.err.Error())
 	case dataFetchError:
@@ -269,7 +258,6 @@ func (e InitDataError) Unwrap() error {
 
 var (
 	ClearStockRatingsError     = InitDataError{kind: clearStockRatingsError}
-	ClearRawStockRatingsError  = InitDataError{kind: clearRawStockRatingsError}
 	DataFetchError             = InitDataError{kind: dataFetchError}
 	TimeParseError             = InitDataError{kind: timeParseError}
 	InsertRawStockRatingsError = InitDataError{kind: insertRawStockRatingsError}
@@ -284,11 +272,7 @@ var (
 func (s *LoaderService) InitData() error {
 
 	// Clear the current data in db
-	err := s.clearRawStockRatings()
-	if err != nil {
-		return ClearRawStockRatingsError.From(err)
-	}
-	err = s.clearStockRatings()
+	err := s.clearStockRatings()
 	if err != nil {
 		return ClearStockRatingsError.From(err)
 	}
@@ -306,34 +290,13 @@ func (s *LoaderService) InitData() error {
 		// If not void insert it into the database
 		if len(resp.Items) > 0 {
 
-			var stocksRatings []repository.AddRawStockRatingsParams
+			var parsedStocksRatings []repository.AddStockRatingsParams
+			// Normalize the data
 			for _, rating := range resp.Items {
 				at, err := time.Parse(time.RFC3339Nano, rating.Time)
 				if err != nil {
 					return TimeParseError.From(err)
 				}
-				stocksRatings = append(stocksRatings, repository.AddRawStockRatingsParams{
-					Ticker:     rating.Ticker,
-					TargetFrom: rating.TargetFrom,
-					TargetTo:   rating.TargetTo,
-					Company:    rating.Company,
-					Action:     rating.Action,
-					Brokerage:  rating.Brokerage,
-					RatingFrom: rating.RatingFrom,
-					RatingTo:   rating.RatingTo,
-					At:         at,
-				})
-			}
-
-			// Insert it into the raw db
-			_, err = s.repo.AddRawStockRatings(context.Background(), stocksRatings)
-			if err != nil {
-				return InsertRawStockRatingsError.From(err)
-			}
-
-			var parsedStocksRatings []repository.AddStockRatingsParams
-			// Normalize the data
-			for _, rating := range stocksRatings {
 				ratingFrom, err := s.rawRatingToStockRating(rating.RatingFrom)
 				if err != nil {
 					log.Println("Error parsing rating: ", rating)
@@ -361,14 +324,18 @@ func (s *LoaderService) InitData() error {
 				}
 
 				parsedStocksRatings = append(parsedStocksRatings, repository.AddStockRatingsParams{
-					Ticker:     rating.Ticker,
-					Company:    rating.Company,
-					TargetFrom: targetFrom,
-					TargetTo:   targetTo,
-					Action:     action,
-					RatingFrom: ratingFrom,
-					RatingTo:   ratingTo,
-					At:         rating.At,
+					Ticker:        rating.Ticker,
+					Company:       rating.Company,
+					Brokerage:     rating.Brokerage,
+					TargetFrom:    targetFrom,
+					TargetTo:      targetTo,
+					Action:        action,
+					RawAction:     rating.RatingFrom,
+					RatingFrom:    ratingFrom,
+					RawRatingFrom: rating.RatingFrom,
+					RatingTo:      ratingTo,
+					RawRatingTo:   rating.RatingTo,
+					At:            at,
 				})
 			}
 

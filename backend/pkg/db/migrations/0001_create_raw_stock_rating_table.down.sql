@@ -1,1 +1,0 @@
-DROP TABLE IF EXISTS raw_stock_rating;

@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -100,27 +99,17 @@ func (ns NullStockRatingType) Value() (driver.Value, error) {
 	return string(ns.StockRatingType), nil
 }
 
-type RawStockRating struct {
-	ID         uuid.UUID
-	Ticker     string
-	TargetFrom string
-	TargetTo   string
-	Company    string
-	Action     string
-	Brokerage  string
-	RatingFrom string
-	RatingTo   string
-	At         time.Time
-}
-
 type StockRating struct {
-	ID         uuid.UUID
-	Ticker     string
-	Company    string
-	TargetFrom pgtype.Numeric
-	TargetTo   pgtype.Numeric
-	Action     StockActionType
-	RatingFrom StockRatingType
-	RatingTo   StockRatingType
-	At         time.Time
+	Ticker        string
+	Company       string
+	Brokerage     string
+	TargetFrom    pgtype.Numeric
+	TargetTo      pgtype.Numeric
+	Action        StockActionType
+	RawAction     string
+	RatingFrom    StockRatingType
+	RawRatingFrom string
+	RatingTo      StockRatingType
+	RawRatingTo   string
+	At            time.Time
 }

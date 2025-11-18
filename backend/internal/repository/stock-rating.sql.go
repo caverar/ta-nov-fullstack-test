@@ -13,6 +13,42 @@ import (
 )
 
 type AddStockRatingsParams struct {
+	Ticker        string
+	Company       string
+	Brokerage     string
+	TargetFrom    pgtype.Numeric
+	TargetTo      pgtype.Numeric
+	Action        StockActionType
+	RawAction     string
+	RatingFrom    StockRatingType
+	RawRatingFrom string
+	RatingTo      StockRatingType
+	RawRatingTo   string
+	At            time.Time
+}
+
+const clearStockRating = `-- name: ClearStockRating :exec
+TRUNCATE TABLE stock_rating
+`
+
+func (q *Queries) ClearStockRating(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, clearStockRating)
+	return err
+}
+
+const getDetailStockRatingList = `-- name: GetDetailStockRatingList :many
+SELECT ticker, company, target_from, target_to, action, rating_from, rating_to, at
+FROM stock_rating
+LIMIT $1
+OFFSET $2
+`
+
+type GetDetailStockRatingListParams struct {
+	Limit  int32
+	Offset int32
+}
+
+type GetDetailStockRatingListRow struct {
 	Ticker     string
 	Company    string
 	TargetFrom pgtype.Numeric
@@ -23,11 +59,62 @@ type AddStockRatingsParams struct {
 	At         time.Time
 }
 
-const clearStockRating = `-- name: ClearStockRating :exec
-TRUNCATE TABLE stock_rating
+func (q *Queries) GetDetailStockRatingList(ctx context.Context, arg GetDetailStockRatingListParams) ([]GetDetailStockRatingListRow, error) {
+	rows, err := q.db.Query(ctx, getDetailStockRatingList, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetDetailStockRatingListRow
+	for rows.Next() {
+		var i GetDetailStockRatingListRow
+		if err := rows.Scan(
+			&i.Ticker,
+			&i.Company,
+			&i.TargetFrom,
+			&i.TargetTo,
+			&i.Action,
+			&i.RatingFrom,
+			&i.RatingTo,
+			&i.At,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getStockRatingList = `-- name: GetStockRatingList :many
+SELECT ticker, company
+FROM stock_rating
+ORDER BY ticker ASC
 `
 
-func (q *Queries) ClearStockRating(ctx context.Context) error {
-	_, err := q.db.Exec(ctx, clearStockRating)
-	return err
+type GetStockRatingListRow struct {
+	Ticker  string
+	Company string
+}
+
+func (q *Queries) GetStockRatingList(ctx context.Context) ([]GetStockRatingListRow, error) {
+	rows, err := q.db.Query(ctx, getStockRatingList)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetStockRatingListRow
+	for rows.Next() {
+		var i GetStockRatingListRow
+		if err := rows.Scan(&i.Ticker, &i.Company); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
