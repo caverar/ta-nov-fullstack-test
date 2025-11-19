@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetRoutes(rg *gin.Engine, h *stockratings.Handler) {
+func GetRoutes(rg *gin.Engine, h stockratings.HandlerInterface) {
 	ping := rg.Group("/ping")
 	ping.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, "pong")

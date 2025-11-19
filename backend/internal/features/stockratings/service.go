@@ -4,10 +4,14 @@ import (
 	"backend/internal/repository"
 	"context"
 	"fmt"
+	"time"
 )
 
 // SERVICE =========================================================================================
 
+type ServiceInterface interface {
+	GetStockRatings(input GetStockRatingsInput) (GetStockRatingsOutput, error)
+}
 type Service struct {
 	repo *repository.Queries
 }
@@ -20,14 +24,30 @@ func NewService(r *repository.Queries) *Service {
 
 // GetStockRatings ---------------------------------------------------------------------------------
 type GetStockRatingsInput struct {
-	SortOrder   string
-	SortBy      string
-	Offset      int32
-	Limit       int32
-	TickerLike  string
-	CompanyLike string
+	sortOrder   string
+	sortBy      string
+	offset      int32
+	limit       int32
+	tickerLike  string
+	companyLike string
 }
-type GetStockRatingsOutput = []repository.GetStockRatingsRow
+
+type rating = struct {
+	ticker      string
+	company     string
+	brokerage   string
+	targetFrom  string
+	targetTo    string
+	action      string
+	rawAction   string
+	ratingFrom  string
+	ratingTo    string
+	at          time.Time
+	targetDelta string
+	score       int32
+}
+type GetStockRatingsOutput = []rating
+
 type GetStockRatingsErrorKind int
 
 const (
@@ -64,15 +84,33 @@ var (
 
 func (s *Service) GetStockRatings(input GetStockRatingsInput) (GetStockRatingsOutput, error) {
 	res, err := s.repo.GetStockRatings(context.Background(), repository.GetStockRatingsParams{
-		SortOrder:   input.SortOrder,
-		SortBy:      input.SortBy,
-		Offset:      input.Offset,
-		Limit:       input.Limit,
-		TickerLike:  input.TickerLike,
-		CompanyLike: input.CompanyLike,
+		SortOrder:   input.sortOrder,
+		SortBy:      input.sortBy,
+		Offset:      input.offset,
+		Limit:       input.limit,
+		TickerLike:  input.tickerLike,
+		CompanyLike: input.companyLike,
 	})
 	if err != nil {
 		return nil, GetStockRatingsErrorUnexpectedError.From(err)
 	}
-	return res, nil
+
+	var out GetStockRatingsOutput
+	for _, r := range res {
+		out = append(out, rating{
+			ticker:      r.Ticker,
+			company:     r.Company,
+			brokerage:   r.Brokerage,
+			targetFrom:  r.TargetFrom,
+			targetTo:    r.TargetTo,
+			action:      string(r.Action),
+			rawAction:   r.RawAction,
+			ratingFrom:  string(r.RatingFrom),
+			ratingTo:    string(r.RatingTo),
+			at:          r.At,
+			targetDelta: r.TargetDelta,
+			score:       r.Score,
+		})
+	}
+	return out, nil
 }
