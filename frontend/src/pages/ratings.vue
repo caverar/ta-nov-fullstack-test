@@ -5,13 +5,16 @@ import type { TableColumn } from '@nuxt/ui'
 import { useFetch } from '@vueuse/core'
 import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import type { User } from '../types'
+import type { Rating } from '../types/ratings'
 import { useCounterStore } from '../stores/ratings'
+import { getRatings } from '../api/stockRatings'
 
 const UAvatar = resolveComponent('UAvatar')
 const UButton = resolveComponent('UButton')
 const UBadge = resolveComponent('UBadge')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 const UCheckbox = resolveComponent('UCheckbox')
+
 
 // const toast = useToast()
 const table = useTemplateRef('table')
@@ -20,107 +23,46 @@ const columnFilters = ref([{
   id: 'email',
   value: ''
 }])
-const columnVisibility = ref()
-const rowSelection = ref({ 1: true })
 
 const tableState = useCounterStore()
 
 
-const { data, isFetching } = useFetch('https://dashboard-template.nuxt.dev/api/customers', { initialData: [] }).json<User[]>()
+// const { data, isFetching } = useFetch('https://dashboard-template.nuxt.dev/api/customers', { initialData: [] }).json<User[]>()
+const { data, isFetching } = useFetch(`${import.meta.env.VITE_API_URL}/api/stock_ratings?${tableState.getApiParams.value}`, { initialData: [] }).json<Rating[]>()
 
-// function getRowItems(row: Row<User>) {
-//   return [
-//     {
-//       type: 'label',
-//       label: 'Actions'
-//     },
-//     {
-//       label: 'Copy customer ID',
-//       icon: 'i-lucide-copy',
-//       onSelect() {
-//         navigator.clipboard.writeText(row.original.id.toString())
-//         toast.add({
-//           title: 'Copied to clipboard',
-//           description: 'Customer ID copied to clipboard'
-//         })
-//       }
-//     },
-//     {
-//       type: 'separator'
-//     },
-//     {
-//       label: 'View customer details',
-//       icon: 'i-lucide-list'
-//     },
-//     {
-//       label: 'View customer payments',
-//       icon: 'i-lucide-wallet'
-//     },
-//     {
-//       type: 'separator'
-//     },
-//     {
-//       label: 'Delete customer',
-//       icon: 'i-lucide-trash',
-//       color: 'error',
-//       onSelect() {
-//         toast.add({
-//           title: 'Customer deleted',
-//           description: 'The customer has been deleted.'
-//         })
-//       }
-//     }
-//   ]
-// }
 
-const columns: TableColumn<User>[] = [
-  {
-    id: 'select',
-    header: ({ table }) =>
-      h(UCheckbox, {
-        'modelValue': table.getIsSomePageRowsSelected()
-          ? 'indeterminate'
-          : table.getIsAllPageRowsSelected(),
-        'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
-          table.toggleAllPageRowsSelected(!!value),
-        'ariaLabel': 'Select all'
-      }),
-    cell: ({ row }) =>
-      h(UCheckbox, {
-        'modelValue': row.getIsSelected(),
-        'onUpdate:modelValue': (value: boolean | 'indeterminate') => row.toggleSelected(!!value),
-        'ariaLabel': 'Select row'
-      })
-  },
+
+
+const columns: TableColumn<Rating>[] = [
   {
     accessorKey: 'id',
     header: 'ID'
   },
+  // {
+  //   accessorKey: 'name',
+  //   header: 'Name',
+  //   cell: ({ row }) => {
+  //     return h('div', { class: 'flex items-center gap-3' }, [
+  //       h(UAvatar, {
+  //         ...row.original.avatar,
+  //         size: 'lg'
+  //       }),
+  //       h('div', undefined, [
+  //         h('p', { class: 'font-medium text-highlighted' }, row.original.name),
+  //         h('p', { class: '' }, `@${row.original.name}`)
+  //       ])
+  //     ])
+  //   }
+  // },
   {
-    accessorKey: 'name',
-    header: 'Name',
-    cell: ({ row }) => {
-      return h('div', { class: 'flex items-center gap-3' }, [
-        h(UAvatar, {
-          ...row.original.avatar,
-          size: 'lg'
-        }),
-        h('div', undefined, [
-          h('p', { class: 'font-medium text-highlighted' }, row.original.name),
-          h('p', { class: '' }, `@${row.original.name}`)
-        ])
-      ])
-    }
-  },
-  {
-    accessorKey: 'email',
+    accessorKey: 'ticker',
     header: ({ column }) => {
       const isSorted = column.getIsSorted()
 
       return h(UButton, {
         color: 'neutral',
         variant: 'ghost',
-        label: 'Email',
+        label: 'Ticker',
         icon: isSorted
           ? isSorted === 'asc'
             ? 'i-lucide-arrow-up-narrow-wide'
@@ -153,15 +95,15 @@ const columns: TableColumn<User>[] = [
     }
   },
   {
+    accessorKey: 'Details',
     id: 'details',
     cell: ({ row }) => {
-      // const id = row.original.id
       return h(UButton, {
         icon: 'arcticons:stockswidget',
         color: 'info',
         variant: 'soft',
         class: 'ml-auto',
-        to: "/"
+        to: `/ratings/${row.original.ticker}`
       })
     }
   }
@@ -198,10 +140,6 @@ const pagination = ref({
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
-
-        <!-- <template #right>
-          <CustomersAddModal />
-        </template> -->
       </UDashboardNavbar>
     </template>
 
@@ -261,7 +199,6 @@ const pagination = ref({
         ref="table"
         v-model:column-filters="columnFilters"
         v-model:column-visibility="tableState.visibleColumns"
-        v-model:row-selection="rowSelection"
         v-model:pagination="pagination"
         :pagination-options="{
           getPaginationRowModel: getPaginationRowModel()

@@ -1,4 +1,4 @@
-import { http } from "./http";
+import { apiClient } from "./http";
 import type {
   Rating,
   RatingsSortBy,
@@ -15,7 +15,7 @@ export function getRatings(params: {
   tickerLike?: string
   companyLike?: string
 }) {
-  return http<Rating[]>(`/v1/stock_ratings`, {
+  return apiClient<Rating[]>(`/v1/stock_ratings`, {
     method: 'GET',
     body: JSON.stringify(params),
   });
