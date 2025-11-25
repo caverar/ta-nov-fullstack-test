@@ -5,8 +5,8 @@ import type { TableColumn } from '@nuxt/ui'
 import { useFetch } from '@vueuse/core'
 import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import type { User } from '../types'
+import { useRatingsStore } from '../stores/ratings'
 import type { Rating } from '../types/ratings'
-import { useCounterStore } from '../stores/ratings'
 import { getRatings } from '../api/stockRatings'
 
 const UAvatar = resolveComponent('UAvatar')
@@ -20,24 +20,24 @@ const UCheckbox = resolveComponent('UCheckbox')
 const table = useTemplateRef('table')
 
 const columnFilters = ref([{
-  id: 'email',
+  id: 'ticker',
   value: ''
 }])
 
-const tableState = useCounterStore()
+const tableState = useRatingsStore()
 
 
 // const { data, isFetching } = useFetch('https://dashboard-template.nuxt.dev/api/customers', { initialData: [] }).json<User[]>()
-const { data, isFetching } = useFetch(`${import.meta.env.VITE_API_URL}/api/stock_ratings?${tableState.getApiParams.value}`, { initialData: [] }).json<Rating[]>()
+const {data, isFetching} = useFetch(`${import.meta.env.VITE_API_URL}/v1/stock_ratings/`, { initialData: [] }).json<{ratings: Rating[]}>()
 
 
 
 
 const columns: TableColumn<Rating>[] = [
-  {
-    accessorKey: 'id',
-    header: 'ID'
-  },
+  // {
+  //   accessorKey: 'id',
+  //   header: 'ID'
+  // },
   // {
   //   accessorKey: 'name',
   //   header: 'Name',
@@ -73,56 +73,56 @@ const columns: TableColumn<Rating>[] = [
       })
     }
   },
-  {
-    accessorKey: 'location',
-    header: 'Location',
-    cell: ({ row }) => row.original.location
-  },
-  {
-    accessorKey: 'status',
-    header: 'Status',
-    filterFn: 'equals',
-    cell: ({ row }) => {
-      const color = {
-        subscribed: 'success' as const,
-        unsubscribed: 'error' as const,
-        bounced: 'warning' as const
-      }[row.original.status]
+  // {
+  //   accessorKey: 'location',
+  //   header: 'Location',
+  //   cell: ({ row }) => row.original.location
+  // },
+  // {
+  //   accessorKey: 'status',
+  //   header: 'Status',
+  //   filterFn: 'equals',
+  //   cell: ({ row }) => {
+  //     const color = {
+  //       subscribed: 'success' as const,
+  //       unsubscribed: 'error' as const,
+  //       bounced: 'warning' as const
+  //     }[row.original.status]
 
-      return h(UBadge, { class: 'capitalize', variant: 'subtle', color }, () =>
-        row.original.status
-      )
-    }
-  },
-  {
-    accessorKey: 'Details',
-    id: 'details',
-    cell: ({ row }) => {
-      return h(UButton, {
-        icon: 'arcticons:stockswidget',
-        color: 'info',
-        variant: 'soft',
-        class: 'ml-auto',
-        to: `/ratings/${row.original.ticker}`
-      })
-    }
-  }
+  //     return h(UBadge, { class: 'capitalize', variant: 'subtle', color }, () =>
+  //       row.original.status
+  //     )
+  //   }
+  // }
+  // {
+  //   accessorKey: 'Details',
+  //   id: 'details',
+  //   cell: ({ row }) => {
+  //     return h(UButton, {
+  //       icon: 'arcticons:stockswidget',
+  //       color: 'info',
+  //       variant: 'soft',
+  //       class: 'ml-auto',
+  //       to: `/ratings/${row.original.ticker}`
+  //     })
+  //   }
+  // }
 ]
 
-const statusFilter = ref('all')
+// const statusFilter = ref('all')
 
-watch(() => statusFilter.value, (newVal) => {
-  if (!table?.value?.tableApi) return
+// watch(() => statusFilter.value, (newVal) => {
+//   if (!table?.value?.tableApi) return
 
-  const statusColumn = table.value.tableApi.getColumn('status')
-  if (!statusColumn) return
+//   const statusColumn = table.value.tableApi.getColumn('status')
+//   if (!statusColumn) return
 
-  if (newVal === 'all') {
-    statusColumn.setFilterValue(undefined)
-  } else {
-    statusColumn.setFilterValue(newVal)
-  }
-})
+//   if (newVal === 'all') {
+//     statusColumn.setFilterValue(undefined)
+//   } else {
+//     statusColumn.setFilterValue(newVal)
+//   }
+// })
 
 const pagination = ref({
   pageIndex: 0,
@@ -154,7 +154,7 @@ const pagination = ref({
         />
 
         <div class="flex flex-wrap items-center gap-1.5">
-          <USelect
+          <!-- <USelect
             v-model="statusFilter"
             :items="[
               { label: 'All', value: 'all' },
@@ -165,7 +165,7 @@ const pagination = ref({
             :ui="{ trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200' }"
             placeholder="Filter status"
             class="min-w-28"
-          />
+          /> -->
           <UDropdownMenu
             :items="
               table?.tableApi
@@ -204,7 +204,7 @@ const pagination = ref({
           getPaginationRowModel: getPaginationRowModel()
         }"
         class="shrink-0"
-        :data="data ?? []"
+        :data="data?.ratings ?? []"
         :columns="columns"
         :loading="isFetching"
         :ui="{

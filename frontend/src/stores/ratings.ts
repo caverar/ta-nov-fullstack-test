@@ -14,7 +14,7 @@ export const useRatingsStore = defineStore('ratings', () => {
   const searchBy = ref<RatingSearchBy>('company')
   const sortBy = ref<RatingsSortBy>(undefined)
   const sortOrder = ref<RatingsSortOrder>('desc')
-  const visibleColumns = ref<RatingColumn[]>(['email'])
+  const visibleColumns = ref<Partial<Record<RatingColumn, boolean>>>({'ticker': true})
 
   const getApiParams = computed(() => {
     const params: Record<string, string> = {}
