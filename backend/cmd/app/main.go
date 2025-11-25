@@ -7,11 +7,10 @@ import (
 	"backend/pkg/db"
 	"log"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
-
-var router = gin.Default()
 
 func main() {
 	// Read environment variables
@@ -27,7 +26,26 @@ func main() {
 	handler := stockratings.NewHandler(service)
 
 	// Start the server
-	router = gin.Default()
+	router := gin.Default()
+	router.Use(cors.Default()) // All origins allowed
+	// router.Use(cors.New(cors.Config{
+	// 	// AllowOrigins: []string{"http://localhost:5173"},
+	// 	AllowOrigins: []string{"*"},
+	// 	// AllowAllOrigins:  true,
+	// 	AllowMethods: []string{"PUT", "PATCH", "GET", "POST", "DELETE"},
+	// 	// AllowHeaders: []string{
+	// 	// 	"Origin",
+	// 	// 	"Content-Type",
+	// 	// 	"Accept",
+	// 	// 	"Authorization",
+	// 	// 	"Cache-Control",
+	// 	// 	"Pragma",
+	// 	// },
+	// 	AllowHeaders: []string{"*"},
+	// 	// ExposeHeaders:    []string{"Content-Length"},
+	// 	AllowCredentials: false,
+	// 	// MaxAge:           12 * time.Hour,
+	// }))
 	routes.GetRoutes(router, handler)
 	router.Run(":5000")
 
